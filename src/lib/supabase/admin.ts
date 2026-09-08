@@ -3,8 +3,22 @@ import { Standee } from "@/types/database";
 import fs from "fs";
 import path from "path";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseUrl = 
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 
+  process.env.SUPABASE_URL || 
+  process.env.STORAGE_URL || 
+  process.env.DATABASE_URL || 
+  "";
+
+const serviceRoleKey = 
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 
+  process.env.STORAGE_SERVICE_ROLE_KEY || 
+  process.env.DATABASE_SERVICE_ROLE_KEY || 
+  process.env.SUPABASE_SECRET_KEY || 
+  process.env.SUPABASE_ANON_KEY || 
+  process.env.STORAGE_ANON_KEY || 
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+  "";
 
 const isLiveSupabase = Boolean(
   supabaseUrl && 
