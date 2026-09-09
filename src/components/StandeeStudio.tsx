@@ -202,23 +202,72 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
     setBackgroundColor(preset.bg);
   };
 
-  // Handle Logo Upload
+  // Handle Logo Upload with client-side canvas compression for ultra-fast saves
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      alert("File size exceeds 2MB limit.");
-      return;
-    }
-
     const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setLogoUrl(reader.result);
-      }
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_SIZE = 400;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/png", 0.9);
+          setLogoUrl(compressedDataUrl);
+        }
+      };
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
+  };
+
+  // Instant Blank Standee Reset
+  const handleStartNewStandee = () => {
+    const nextCode = `ST-${Math.floor(104 + Math.random() * 890)}`;
+    setSerialCode(nextCode);
+    setBusinessName("");
+    setGoogleReviewUrl("");
+    setWhatsappNumber("");
+    setLogoUrl(null);
+    setTheme("luxury-dark");
+    setPrimaryColor("#F59E0B");
+    setAccentColor("#D97706");
+    setBackgroundColor("#0A0E1A");
+    setHeadline("Rate Your Experience");
+    setSubheadline("Point your camera to scan • Rate in 5 seconds");
+    setCtaText("Review us on Google");
+    setSaveStatus({
+      type: "success",
+      message: `✨ Started fresh blank Standee #${nextCode}! Fill details and click Save.`,
+    });
+    setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
+  };
+
+  // Generate next random code
+  const handleGenerateNextCode = () => {
+    const nextCode = `ST-${Math.floor(104 + Math.random() * 890)}`;
+    setSerialCode(nextCode);
   };
 
   // Copy encoded content
@@ -321,14 +370,15 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
 
         {/* Global Toolbar */}
         <div className="flex items-center gap-2.5">
-          <Link
-            href="/admin/studio?new=true"
+          <button
+            type="button"
+            onClick={handleStartNewStandee}
             className="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm"
             title="Create a new blank standee for another shop"
           >
             <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">New Standee</span>
-          </Link>
+          </button>
 
           <button
             onClick={handleDownloadPdf}
@@ -408,14 +458,23 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Serial Code / ID <span className="text-amber-400">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Serial Code / ID <span className="text-amber-400">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleGenerateNextCode}
+                    className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold"
+                  >
+                    🎲 Next Code
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={serialCode}
                   onChange={(e) => setSerialCode(e.target.value.toUpperCase())}
-                  placeholder="e.g., ST-101"
+                  placeholder="e.g., ST-104"
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-xs text-amber-400 font-mono font-bold placeholder-slate-600 transition"
                 />
               </div>

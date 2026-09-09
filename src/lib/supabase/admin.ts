@@ -2,6 +2,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Standee } from "@/types/database";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 const supabaseUrl = 
   process.env.NEXT_PUBLIC_SUPABASE_URL || 
@@ -44,7 +45,8 @@ const DENTAL_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/
 const SALON_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="%231E1B4B" stroke="%23FB7185" stroke-width="4"/><path d="M34 26a10 10 0 0 0-10 10c0 5 3 9 7 10l12 28 8-4-11-26a10 10 0 0 0 4-8 10 10 0 0 0-10-10zm32 0a10 10 0 0 1 10 10c0 3-1 6-3 8l-11 26 8 4 12-28c4-1 7-5 7-10a10 10 0 0 0-10-10 10 10 0 0 0-8 4l-5 8-5-8a10 10 0 0 0-8-4z" fill="%23FB7185"/></svg>`;
 
 // Local JSON file persistence for local dev / offline testing
-const TMP_DB_PATH = path.join(process.cwd(), ".tmp", "inventory_db.json");
+const TMP_DB_PATH = path.join(os.tmpdir(), "qr_inventory_db.json");
+let memoryStore: Record<string, Standee> | null = null;
 
 function getInitialDemoStore(): Record<string, Standee> {
   const now = new Date().toISOString();
@@ -128,33 +130,34 @@ function getInitialDemoStore(): Record<string, Standee> {
 }
 
 function getLocalStore(): Record<string, Standee> {
-  try {
-    if (!fs.existsSync(TMP_DB_PATH)) {
-      const defaultStore = getInitialDemoStore();
-      try {
-        fs.mkdirSync(path.dirname(TMP_DB_PATH), { recursive: true });
-        fs.writeFileSync(TMP_DB_PATH, JSON.stringify(Object.values(defaultStore), null, 2), "utf-8");
-      } catch {}
-      return defaultStore;
-    }
-    const raw = fs.readFileSync(TMP_DB_PATH, "utf-8");
-    const arr: Standee[] = JSON.parse(raw);
-    const map: Record<string, Standee> = {};
-    for (const item of arr) {
-      map[item.serial_code] = item;
-    }
-    return map;
-  } catch {
-    return getInitialDemoStore();
+  if (memoryStore && Object.keys(memoryStore).length > 0) {
+    return memoryStore;
   }
+  try {
+    if (fs.existsSync(TMP_DB_PATH)) {
+      const raw = fs.readFileSync(TMP_DB_PATH, "utf-8");
+      const arr: Standee[] = JSON.parse(raw);
+      const map: Record<string, Standee> = {};
+      for (const item of arr) {
+        map[item.serial_code] = item;
+      }
+      memoryStore = map;
+      return map;
+    }
+  } catch (e) {
+    console.warn("Local store read fallback:", e);
+  }
+  memoryStore = getInitialDemoStore();
+  return memoryStore;
 }
 
 function saveLocalStore(map: Record<string, Standee>) {
+  memoryStore = map;
   try {
     fs.mkdirSync(path.dirname(TMP_DB_PATH), { recursive: true });
     fs.writeFileSync(TMP_DB_PATH, JSON.stringify(Object.values(map), null, 2), "utf-8");
   } catch (err) {
-    console.error("Failed to write to local fallback database:", err);
+    console.warn("Non-fatal local cache write notice:", err);
   }
 }
 
