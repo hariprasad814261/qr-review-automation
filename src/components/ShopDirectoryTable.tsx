@@ -199,7 +199,7 @@ export function ShopDirectoryTable({ initialStandees, appBaseUrl }: ShopDirector
           </div>
 
           <Link
-            href="/admin/studio"
+            href="/admin/studio?new=true"
             className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20 shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />

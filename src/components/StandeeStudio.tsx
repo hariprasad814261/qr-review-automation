@@ -321,6 +321,15 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
 
         {/* Global Toolbar */}
         <div className="flex items-center gap-2.5">
+          <Link
+            href="/admin/studio?new=true"
+            className="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold rounded-xl transition flex items-center gap-1.5 shadow-sm"
+            title="Create a new blank standee for another shop"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">New Standee</span>
+          </Link>
+
           <button
             onClick={handleDownloadPdf}
             disabled={!qrDataUrl}

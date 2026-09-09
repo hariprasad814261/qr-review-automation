@@ -52,7 +52,7 @@ export default async function AdminBatchPage() {
             </Link>
 
             <Link
-              href="/admin/studio"
+              href="/admin/studio?new=true"
               className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -121,7 +121,7 @@ export default async function AdminBatchPage() {
 
           <div className="flex flex-col sm:flex-row gap-2.5 w-full md:w-auto">
             <Link
-              href="/admin/studio"
+              href="/admin/studio?new=true"
               className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
             >
               <Palette className="w-4 h-4" />
