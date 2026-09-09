@@ -29,12 +29,38 @@ interface ShopDirectoryTableProps {
   appBaseUrl: string;
 }
 
+const LOCAL_STORAGE_KEY = "qr_custom_standees_v1";
+
 export function ShopDirectoryTable({ initialStandees, appBaseUrl }: ShopDirectoryTableProps) {
   const [standees, setStandees] = useState<Standee[]>(initialStandees);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "pending">("all");
   const [isPending, startTransition] = useTransition();
   const [downloadingCode, setDownloadingCode] = useState<string | null>(null);
+
+  // Sync and merge with client-side localStorage on mount
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (raw) {
+          const localMap: Record<string, Standee> = JSON.parse(raw);
+          setStandees((prev) => {
+            const map: Record<string, Standee> = {};
+            for (const s of prev) {
+              map[s.serial_code] = s;
+            }
+            for (const [code, s] of Object.entries(localMap)) {
+              map[code] = { ...(map[code] || {}), ...s };
+            }
+            return Object.values(map).sort((a, b) => (b.serial_code > a.serial_code ? 1 : -1));
+          });
+        }
+      } catch (e) {
+        console.warn("LocalStorage directory sync notice:", e);
+      }
+    }
+  }, []);
 
   // Filtered list
   const filteredStandees = standees.filter((s) => {
@@ -118,35 +144,82 @@ export function ShopDirectoryTable({ initialStandees, appBaseUrl }: ShopDirector
     }
   };
 
-
   // Handle Delete
   const handleDelete = (shop: Standee) => {
     const confirmDelete = window.confirm(`Are you sure you want to delete shop #${shop.serial_code} (${shop.business_name || "Unnamed"})?`);
     if (!confirmDelete) return;
 
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (raw) {
+          const localMap: Record<string, Standee> = JSON.parse(raw);
+          delete localMap[shop.serial_code];
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localMap));
+        }
+      } catch (e) {
+        console.warn("Local storage delete warning:", e);
+      }
+    }
+
+    setStandees((prev) => prev.filter((item) => item.serial_code !== shop.serial_code));
+
     startTransition(async () => {
-      const res = await deleteShopAction(shop.serial_code);
-      if (res.success) {
-        setStandees((prev) => prev.filter((item) => item.serial_code !== shop.serial_code));
-      } else {
-        alert(res.error || "Failed to delete shop.");
+      try {
+        await fetch(`/api/standees?code=${shop.serial_code}`, { method: "DELETE" });
+      } catch {
+        await deleteShopAction(shop.serial_code);
       }
     });
   };
 
   // Handle Duplicate
   const handleDuplicate = (shop: Standee) => {
-    const defaultNewCode = `${shop.serial_code}-COPY`;
+    const numbers = standees
+      .map((s) => {
+        const match = s.serial_code.match(/ST-(\d+)/i);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter((n) => !isNaN(n) && n > 0);
+    const nextNum = numbers.length > 0 ? Math.max(103, ...numbers) + 1 : 104;
+    const defaultNewCode = `ST-${nextNum}`;
+
     const newCode = window.prompt("Enter new serial code for duplicated shop:", defaultNewCode);
     if (!newCode || !newCode.trim()) return;
 
+    const cleanCode = newCode.trim().toUpperCase();
+
+    const cloned: Standee = {
+      ...shop,
+      id: `shop-${Date.now()}`,
+      serial_code: cleanCode,
+      business_name: `${shop.business_name || "Shop"} (Copy)`,
+      scan_count: 0,
+      last_scanned_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        const localMap: Record<string, Standee> = raw ? JSON.parse(raw) : {};
+        localMap[cleanCode] = cloned;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localMap));
+      } catch (e) {}
+    }
+
+    setStandees((prev) => [cloned, ...prev]);
+
     startTransition(async () => {
-      const res = await duplicateShopAction(shop.serial_code, newCode.trim().toUpperCase());
-      if (res.success && res.data) {
-        setStandees((prev) => [res.data as Standee, ...prev]);
-        alert(`Shop #${shop.serial_code} duplicated into #${res.data.serial_code}!`);
-      } else {
-        alert(res.error || "Failed to duplicate shop.");
+      try {
+        await fetch("/api/standees", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cloned),
+        });
+      } catch {
+        await duplicateShopAction(shop.serial_code, cleanCode);
       }
     });
   };

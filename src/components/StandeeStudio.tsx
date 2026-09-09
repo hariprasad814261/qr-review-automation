@@ -95,15 +95,40 @@ const THEME_PRESETS: {
   },
 ];
 
+// LocalStorage helper for resilient client-side persistence
+const LOCAL_STORAGE_KEY = "qr_custom_standees_v1";
+
+function getLocalStandeesMap(): Record<string, Standee> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalStandeeRecord(standee: Standee) {
+  if (typeof window === "undefined") return;
+  try {
+    const map = getLocalStandeesMap();
+    map[standee.serial_code] = standee;
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+  } catch (e) {
+    console.warn("LocalStorage save notice:", e);
+  }
+}
+
 export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3000" }: StandeeStudioProps) {
   // Form State
-  const [serialCode, setSerialCode] = useState(initialStandee?.serial_code || "ST-101");
-  const [businessName, setBusinessName] = useState(initialStandee?.business_name || "The Velvet Bistro & Coffee");
-  const [googleReviewUrl, setGoogleReviewUrl] = useState(initialStandee?.google_review_url || "https://maps.app.goo.gl/example");
-  const [whatsappNumber, setWhatsappNumber] = useState(initialStandee?.whatsapp_number || "919876543210");
+  const [serialCode, setSerialCode] = useState(initialStandee?.serial_code ?? "ST-101");
+  const [businessName, setBusinessName] = useState(initialStandee?.business_name ?? "BURMIX");
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(
+    initialStandee?.google_review_url ?? "https://search.google.com/local/writereview?placeid=ChIJUwNMnqBhUjoR-60P8RSKHwo"
+  );
+  const [whatsappNumber, setWhatsappNumber] = useState(initialStandee?.whatsapp_number ?? "919710707522");
   
   // QR Target Mode & Routing State
-  // Default to direct_google so QR codes work 100% directly when scanned by phones!
   const [qrTargetMode, setQrTargetMode] = useState<QrTargetMode>(initialStandee?.qr_target_mode || "direct_google");
   const [customQrUrl, setCustomQrUrl] = useState<string>(initialStandee?.custom_qr_url || "");
   const [customBaseUrl, setCustomBaseUrl] = useState<string>(
@@ -120,6 +145,29 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
   const [subheadline, setSubheadline] = useState(initialStandee?.subheadline || "Point your camera to scan • Rate in 5 seconds");
   const [ctaText, setCtaText] = useState(initialStandee?.cta_text || "Review us on Google");
   const [logoUrl, setLogoUrl] = useState<string | null>(initialStandee?.logo_url || null);
+
+  // Hydrate from localStorage on client mount if available
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const localMap = getLocalStandeesMap();
+      const local = localMap[serialCode];
+      if (local) {
+        if (local.business_name !== undefined) setBusinessName(local.business_name || "");
+        if (local.google_review_url !== undefined) setGoogleReviewUrl(local.google_review_url || "");
+        if (local.whatsapp_number !== undefined) setWhatsappNumber(local.whatsapp_number || "");
+        if (local.logo_url !== undefined) setLogoUrl(local.logo_url);
+        if (local.theme) setTheme(local.theme);
+        if (local.primary_color) setPrimaryColor(local.primary_color);
+        if (local.accent_color) setAccentColor(local.accent_color);
+        if (local.background_color) setBackgroundColor(local.background_color);
+        if (local.headline) setHeadline(local.headline);
+        if (local.subheadline) setSubheadline(local.subheadline);
+        if (local.cta_text) setCtaText(local.cta_text);
+        if (local.qr_target_mode) setQrTargetMode(local.qr_target_mode);
+        if (local.custom_qr_url) setCustomQrUrl(local.custom_qr_url);
+      }
+    }
+  }, [serialCode]);
 
   // Preview & Export State
   const [previewTab, setPreviewTab] = useState<"standee" | "qr" | "mobile">("qr");
@@ -247,7 +295,20 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
 
   // Instant Blank Standee Reset
   const handleStartNewStandee = () => {
-    const nextCode = `ST-${Math.floor(104 + Math.random() * 890)}`;
+    let nextNum = 104;
+    if (typeof window !== "undefined") {
+      const localMap = getLocalStandeesMap();
+      const numbers = Object.keys(localMap)
+        .map((c) => {
+          const m = c.match(/ST-(\d+)/i);
+          return m ? parseInt(m[1], 10) : 0;
+        })
+        .filter((n) => !isNaN(n) && n > 0);
+      if (numbers.length > 0) {
+        nextNum = Math.max(103, ...numbers) + 1;
+      }
+    }
+    const nextCode = `ST-${nextNum}`;
     setSerialCode(nextCode);
     setBusinessName("");
     setGoogleReviewUrl("");
@@ -267,9 +328,22 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
     setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
   };
 
-  // Generate next random code
+  // Generate next sequential code
   const handleGenerateNextCode = () => {
-    const nextCode = `ST-${Math.floor(104 + Math.random() * 890)}`;
+    let nextNum = 104;
+    if (typeof window !== "undefined") {
+      const localMap = getLocalStandeesMap();
+      const numbers = Object.keys(localMap)
+        .map((c) => {
+          const m = c.match(/ST-(\d+)/i);
+          return m ? parseInt(m[1], 10) : 0;
+        })
+        .filter((n) => !isNaN(n) && n > 0);
+      if (numbers.length > 0) {
+        nextNum = Math.max(103, ...numbers) + 1;
+      }
+    }
+    const nextCode = `ST-${nextNum}`;
     setSerialCode(nextCode);
   };
 
@@ -284,7 +358,45 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
 
   // Save Shop Profile Action
   const handleSave = () => {
+    if (!businessName || !businessName.trim()) {
+      setSaveStatus({
+        type: "error",
+        message: "Please enter a Shop / Business Name before saving.",
+      });
+      return;
+    }
+
     setSaveStatus({ type: null, message: "" });
+
+    // Instantly save to local browser store so client data is 100% persistent
+    const recordToSave: Standee = {
+      id: initialStandee?.id || `shop-${Date.now()}`,
+      serial_code: serialCode.trim().toUpperCase(),
+      business_name: businessName.trim(),
+      google_review_url: formatDirectGoogleReviewUrl(googleReviewUrl),
+      whatsapp_number: whatsappNumber ? whatsappNumber.trim() : null,
+      is_active: true,
+      scan_count: initialStandee?.scan_count || 0,
+      last_scanned_at: initialStandee?.last_scanned_at || null,
+      created_at: initialStandee?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      theme: theme,
+      primary_color: primaryColor,
+      accent_color: accentColor,
+      background_color: backgroundColor,
+      headline: headline,
+      subheadline: subheadline,
+      cta_text: ctaText,
+      logo_url: logoUrl,
+      qr_target_mode: qrTargetMode,
+      custom_qr_url: customQrUrl,
+      qr_style: {
+        dot_color: primaryColor || "#000000",
+        corner_color: primaryColor || "#000000",
+        center_logo: Boolean(logoUrl),
+      }
+    };
+    saveLocalStandeeRecord(recordToSave);
 
     startTransition(async () => {
       const input: SaveShopDesignInput = {
@@ -315,14 +427,14 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
         if (res.success) {
           setSaveStatus({
             type: "success",
-            message: res.message || `Shop profile '${businessName}' saved successfully!`,
+            message: res.message || `Shop '${businessName}' saved successfully!`,
           });
           setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
           return;
         } else {
           setSaveStatus({
             type: "error",
-            message: res.error || "Failed to save profile.",
+            message: res.error || "Failed to save profile on server.",
           });
           return;
         }
@@ -332,13 +444,13 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
         if (res.success) {
           setSaveStatus({
             type: "success",
-            message: res.message || "Shop profile and custom design saved successfully!",
+            message: res.message || `Shop '${businessName}' saved successfully!`,
           });
           setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
         } else {
           setSaveStatus({
             type: "error",
-            message: res.error || "Failed to save profile.",
+            message: res.error || "Saved locally in browser.",
           });
         }
       }

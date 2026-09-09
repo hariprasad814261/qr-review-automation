@@ -38,7 +38,7 @@ export const supabaseAdmin = isLiveSupabase
   : null;
 
 // Clean SVG sample logos as data URIs for demo shops
-const BISTRO_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="%23F59E0B"><circle cx="50" cy="50" r="46" fill="%23261C14" stroke="%23F59E0B" stroke-width="4"/><path d="M30 40h34c0 14-8 24-17 24s-17-10-17-24zm38 5h6a6 6 0 0 1 0 12h-6V45zM26 70h42v4H26z" fill="%23F59E0B"/><path d="M40 24c-2 4 2 8 0 12M50 24c-2 4 2 8 0 12" stroke="%23F59E0B" stroke-width="2" stroke-linecap="round" fill="none"/></svg>`;
+const BURMIX_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="%23163A29" stroke="%23D4AF37" stroke-width="4"/><path d="M30 42c0-5 8-8 20-8s20 3 20 8-8 8-20 8-20-3-20-8zm5 12h30c0 10-6 18-15 18s-15-8-15-18z" fill="%23D4AF37"/><text x="50" y="55" fill="%23D4AF37" font-size="12" font-weight="900" text-anchor="middle" font-family="sans-serif">BURMIX</text></svg>`;
 
 const DENTAL_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="%23F0FDFA" stroke="%230D9488" stroke-width="4"/><path d="M50 22c-14 0-22 9-22 20 0 13 7 26 12 38 3 5 6 8 10 8s7-3 10-8c5-12 12-25 12-38 0-11-8-20-22-20zm-8 24a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm16 0a6 6 0 1 1 0-12 6 6 0 0 1 0 12z" fill="%230D9488"/></svg>`;
 
@@ -54,25 +54,26 @@ function getInitialDemoStore(): Record<string, Standee> {
     "ST-101": {
       id: "10100000-0000-0000-0000-000000000101",
       serial_code: "ST-101",
-      business_name: "The Velvet Bistro & Coffee",
-      google_review_url: "https://maps.app.goo.gl/example",
-      whatsapp_number: "919876543210",
+      business_name: "BURMIX",
+      google_review_url: "https://search.google.com/local/writereview?placeid=ChIJUwNMnqBhUjoR-60P8RSKHwo",
+      whatsapp_number: "919710707522",
       is_active: true,
-      scan_count: 42,
+      scan_count: 69,
       last_scanned_at: now,
       created_at: now,
       updated_at: now,
-      theme: "warm-hospitality",
-      primary_color: "#D97706",
-      accent_color: "#F59E0B",
-      background_color: "#181411",
-      headline: "Loved Your Brew & Bites?",
-      subheadline: "Point your camera to rate your experience in 5 seconds",
+      theme: "luxury-dark",
+      primary_color: "#F59E0B",
+      accent_color: "#D97706",
+      background_color: "#0A0E1A",
+      headline: "Rate Your Experience",
+      subheadline: "Point your camera to scan • Rate in 5 seconds",
       cta_text: "Review us on Google",
-      logo_url: BISTRO_LOGO,
+      logo_url: BURMIX_LOGO,
+      qr_target_mode: "direct_google",
       qr_style: {
-        dot_color: "#78350F",
-        corner_color: "#D97706",
+        dot_color: "#D97706",
+        corner_color: "#F59E0B",
         center_logo: true,
       },
     },
