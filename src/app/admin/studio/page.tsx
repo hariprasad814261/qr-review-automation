@@ -22,7 +22,9 @@ export default async function AdminStudioPage({ searchParams }: StudioPageProps)
     const all = await getAllStandees();
     standee = all.find((s) => s.serial_code === "ST-101") || all[0] || null;
   }
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://qr-review-automation.vercel.app");
 
   return <StandeeStudio initialStandee={standee} appBaseUrl={baseUrl} />;
 }

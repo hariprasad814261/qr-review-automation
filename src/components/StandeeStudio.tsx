@@ -40,6 +40,7 @@ interface StandeeStudioProps {
 }
 
 const LOCAL_LAN_IP = "10.89.91.42";
+const VERCEL_APP_URL = "https://qr-review-automation.vercel.app";
 
 const THEME_PRESETS: {
   id: StandeeTheme;
@@ -103,7 +104,7 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
   const [qrTargetMode, setQrTargetMode] = useState<QrTargetMode>(initialStandee?.qr_target_mode || "direct_google");
   const [customQrUrl, setCustomQrUrl] = useState<string>(initialStandee?.custom_qr_url || "");
   const [customBaseUrl, setCustomBaseUrl] = useState<string>(
-    appBaseUrl.includes("localhost") ? `http://${LOCAL_LAN_IP}:3000` : appBaseUrl
+    appBaseUrl && !appBaseUrl.includes("localhost") ? appBaseUrl : VERCEL_APP_URL
   );
   const [copied, setCopied] = useState(false);
 
@@ -544,21 +545,28 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
                         type="text"
                         value={customBaseUrl}
                         onChange={(e) => setCustomBaseUrl(e.target.value)}
-                        placeholder={`http://${LOCAL_LAN_IP}:3000 or https://yourdomain.com`}
+                        placeholder={`https://qr-review-automation.vercel.app or http://${LOCAL_LAN_IP}:3000`}
                         className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs font-mono text-amber-400"
                       />
                       <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
                         <button
                           type="button"
-                          onClick={() => setCustomBaseUrl(`http://${LOCAL_LAN_IP}:3000`)}
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                          onClick={() => setCustomBaseUrl(VERCEL_APP_URL)}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition font-semibold flex items-center gap-1"
                         >
-                          Use Local Wi-Fi IP ({LOCAL_LAN_IP}:3000)
+                          <span>☁️ Live Vercel Production URL</span>
                         </button>
-                        <span className="text-slate-500">
-                          (Phones on the same Wi-Fi can open this address, whereas &quot;localhost&quot; fails)
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setCustomBaseUrl(`http://${LOCAL_LAN_IP}:3000`)}
+                          className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 transition"
+                        >
+                          Local Wi-Fi Only ({LOCAL_LAN_IP})
+                        </button>
                       </div>
+                      <p className="text-[10px] text-slate-400">
+                        <strong>Important:</strong> Use the <strong>Live Vercel Production URL</strong> for all physical standees so customers can scan on 4G/5G mobile data from any area.
+                      </p>
                     </div>
                   )}
                 </div>
