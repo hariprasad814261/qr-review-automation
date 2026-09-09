@@ -31,7 +31,10 @@ import {
   Radio,
   Wifi,
   ShieldCheck,
-  Check
+  Check,
+  Plus,
+  RotateCcw,
+  RefreshCw
 } from "lucide-react";
 
 interface StandeeStudioProps {
@@ -302,18 +305,42 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
         custom_qr_url: customQrUrl,
       };
 
-      const res = await saveShopDesignAction(input);
-      if (res.success) {
-        setSaveStatus({
-          type: "success",
-          message: res.message || "Shop profile and custom design saved successfully!",
+      try {
+        const response = await fetch("/api/standees", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(input),
         });
-        setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
-      } else {
-        setSaveStatus({
-          type: "error",
-          message: res.error || "Failed to save profile.",
-        });
+        const res = await response.json();
+        if (res.success) {
+          setSaveStatus({
+            type: "success",
+            message: res.message || `Shop profile '${businessName}' saved successfully!`,
+          });
+          setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
+          return;
+        } else {
+          setSaveStatus({
+            type: "error",
+            message: res.error || "Failed to save profile.",
+          });
+          return;
+        }
+      } catch {
+        // Fallback to server action if fetch failed
+        const res = await saveShopDesignAction(input);
+        if (res.success) {
+          setSaveStatus({
+            type: "success",
+            message: res.message || "Shop profile and custom design saved successfully!",
+          });
+          setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
+        } else {
+          setSaveStatus({
+            type: "error",
+            message: res.error || "Failed to save profile.",
+          });
+        }
       }
     });
   };
