@@ -18,7 +18,7 @@ export const revalidate = 0; // Fresh dynamic data on every request
 
 export default async function AdminBatchPage() {
   const standees = await getAllStandees();
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://qr-review-automation.vercel.app";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.URL || "";
 
   const totalCount = standees.length;
   const activeCount = standees.filter((s) => s.is_active).length;

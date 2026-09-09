@@ -150,6 +150,16 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
 
   const targetScanUrl = getEncodedQrContent();
 
+  // Automatically detect current live domain (Netlify, custom domain, Vercel)
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.origin) {
+      const origin = window.location.origin;
+      if (!origin.includes("localhost") && !origin.includes("127.0.0.1")) {
+        setCustomBaseUrl(origin);
+      }
+    }
+  }, []);
+
   // Automatically regenerate QR code whenever encoded content or design changes
   useEffect(() => {
     let active = true;
