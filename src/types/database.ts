@@ -62,6 +62,7 @@ export interface UpdateStandeeInput {
 export interface SaveShopDesignInput {
   pin?: string;
   serial_code: string;
+  original_serial_code?: string;
   business_name: string;
   google_review_url: string;
   whatsapp_number: string;

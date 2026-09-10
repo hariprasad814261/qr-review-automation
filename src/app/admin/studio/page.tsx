@@ -73,11 +73,12 @@ export default async function AdminStudioPage({ searchParams }: StudioPageProps)
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.URL || "";
+    const componentKey = isNew ? `new-${Date.now()}` : (standee?.serial_code || code || "studio-root");
 
-    return <StandeeStudio initialStandee={standee} appBaseUrl={baseUrl} />;
+    return <StandeeStudio key={componentKey} initialStandee={standee} appBaseUrl={baseUrl} />;
   } catch (err) {
     console.error("Critical Studio page render error:", err);
     // Return empty studio with fallback rather than crashing
-    return <StandeeStudio appBaseUrl="" />;
+    return <StandeeStudio key="fallback-studio" appBaseUrl="" />;
   }
 }

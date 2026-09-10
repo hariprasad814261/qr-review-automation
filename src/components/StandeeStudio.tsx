@@ -120,13 +120,14 @@ function saveLocalStandeeRecord(standee: Standee) {
 }
 
 export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3000" }: StandeeStudioProps) {
+  // Track original serial code so renaming customer code updates properly without orphaned keys
+  const originalSerialCodeRef = useRef<string>(initialStandee?.serial_code || "");
+
   // Form State
-  const [serialCode, setSerialCode] = useState(initialStandee?.serial_code ?? "ST-101");
-  const [businessName, setBusinessName] = useState(initialStandee?.business_name ?? "BURMIX");
-  const [googleReviewUrl, setGoogleReviewUrl] = useState(
-    initialStandee?.google_review_url ?? "https://search.google.com/local/writereview?placeid=ChIJUwNMnqBhUjoR-60P8RSKHwo"
-  );
-  const [whatsappNumber, setWhatsappNumber] = useState(initialStandee?.whatsapp_number ?? "919710707522");
+  const [serialCode, setSerialCode] = useState(initialStandee?.serial_code || "ST-101");
+  const [businessName, setBusinessName] = useState(initialStandee?.business_name || "");
+  const [googleReviewUrl, setGoogleReviewUrl] = useState(initialStandee?.google_review_url || "");
+  const [whatsappNumber, setWhatsappNumber] = useState(initialStandee?.whatsapp_number || "");
   
   // QR Target Mode & Routing State
   const [qrTargetMode, setQrTargetMode] = useState<QrTargetMode>(initialStandee?.qr_target_mode || "direct_google");
@@ -146,15 +147,20 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
   const [ctaText, setCtaText] = useState(initialStandee?.cta_text || "Review us on Google");
   const [logoUrl, setLogoUrl] = useState<string | null>(initialStandee?.logo_url || null);
 
-  // Hydrate from localStorage on client mount if available
+  // Hydrate from localStorage on client mount if available, or sync from initialStandee
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const targetCode = (initialStandee?.serial_code || serialCode || "").toUpperCase();
+      originalSerialCodeRef.current = targetCode;
+
       const localMap = getLocalStandeesMap();
-      const local = localMap[serialCode];
+      const local = localMap[targetCode];
+
       if (local) {
-        if (local.business_name !== undefined) setBusinessName(local.business_name || "");
-        if (local.google_review_url !== undefined) setGoogleReviewUrl(local.google_review_url || "");
-        if (local.whatsapp_number !== undefined) setWhatsappNumber(local.whatsapp_number || "");
+        if (local.serial_code) setSerialCode(local.serial_code);
+        if (local.business_name !== undefined && local.business_name !== null) setBusinessName(local.business_name);
+        if (local.google_review_url !== undefined && local.google_review_url !== null) setGoogleReviewUrl(local.google_review_url);
+        if (local.whatsapp_number !== undefined && local.whatsapp_number !== null) setWhatsappNumber(local.whatsapp_number);
         if (local.logo_url !== undefined) setLogoUrl(local.logo_url);
         if (local.theme) setTheme(local.theme);
         if (local.primary_color) setPrimaryColor(local.primary_color);
@@ -165,9 +171,24 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
         if (local.cta_text) setCtaText(local.cta_text);
         if (local.qr_target_mode) setQrTargetMode(local.qr_target_mode);
         if (local.custom_qr_url) setCustomQrUrl(local.custom_qr_url);
+      } else if (initialStandee) {
+        if (initialStandee.serial_code) setSerialCode(initialStandee.serial_code);
+        if (initialStandee.business_name !== undefined && initialStandee.business_name !== null) setBusinessName(initialStandee.business_name);
+        if (initialStandee.google_review_url !== undefined && initialStandee.google_review_url !== null) setGoogleReviewUrl(initialStandee.google_review_url);
+        if (initialStandee.whatsapp_number !== undefined && initialStandee.whatsapp_number !== null) setWhatsappNumber(initialStandee.whatsapp_number);
+        if (initialStandee.logo_url !== undefined) setLogoUrl(initialStandee.logo_url);
+        if (initialStandee.theme) setTheme(initialStandee.theme);
+        if (initialStandee.primary_color) setPrimaryColor(initialStandee.primary_color);
+        if (initialStandee.accent_color) setAccentColor(initialStandee.accent_color);
+        if (initialStandee.background_color) setBackgroundColor(initialStandee.background_color);
+        if (initialStandee.headline) setHeadline(initialStandee.headline);
+        if (initialStandee.subheadline) setSubheadline(initialStandee.subheadline);
+        if (initialStandee.cta_text) setCtaText(initialStandee.cta_text);
+        if (initialStandee.qr_target_mode) setQrTargetMode(initialStandee.qr_target_mode);
+        if (initialStandee.custom_qr_url) setCustomQrUrl(initialStandee.custom_qr_url);
       }
     }
-  }, [serialCode]);
+  }, [initialStandee?.serial_code]);
 
   // Preview & Export State
   const [previewTab, setPreviewTab] = useState<"standee" | "qr" | "mobile">("qr");
@@ -183,20 +204,24 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
 
   // Deterministically calculate the exact content encoded into the QR Code
   const getEncodedQrContent = (): string => {
+    const cleanCode = (serialCode || "ST-101").trim().toUpperCase();
+    const cleanBase = ((customBaseUrl || "").trim() || appBaseUrl || VERCEL_APP_URL).replace(/\/$/, "");
+
     if (qrTargetMode === "direct_google") {
-      const formatted = formatDirectGoogleReviewUrl(googleReviewUrl.trim());
+      const cleanGoogle = (googleReviewUrl || "").trim();
+      const formatted = cleanGoogle ? formatDirectGoogleReviewUrl(cleanGoogle) : "";
       return formatted || "https://maps.google.com";
     }
     if (qrTargetMode === "direct_whatsapp") {
-      const clean = whatsappNumber.replace(/[^0-9]/g, "");
+      const clean = (whatsappNumber || "").replace(/[^0-9]/g, "");
       return clean ? `https://wa.me/${clean}` : "https://whatsapp.com";
     }
     if (qrTargetMode === "custom_url") {
-      return customQrUrl.trim() || "https://google.com";
+      const cleanCustom = (customQrUrl || "").trim();
+      return cleanCustom || "https://google.com";
     }
     // smart_filter mode
-    const host = (customBaseUrl.trim() || appBaseUrl).replace(/\/$/, "");
-    return `${host}/s/${serialCode.toUpperCase()}`;
+    return `${cleanBase}/s/${cleanCode}`;
   };
 
   const targetScanUrl = getEncodedQrContent();
@@ -218,11 +243,11 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
 
     const timer = setTimeout(async () => {
       try {
-        const dotColor = theme === "clean-white" || theme === "classic-google" ? "#0F172A" : primaryColor;
+        const dotColor = theme === "clean-white" || theme === "classic-google" ? "#0F172A" : (primaryColor || "#000000");
         const qrBg = "#FFFFFF"; // Keep QR base white for 100% scan reliability across camera lenses
 
         const dataUrl = await generateBrandedQrDataUrl({
-          text: targetScanUrl,
+          text: targetScanUrl || "https://maps.google.com",
           size: 1000,
           dotColor: dotColor,
           bgColor: qrBg,
@@ -309,6 +334,7 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
       }
     }
     const nextCode = `ST-${nextNum}`;
+    originalSerialCodeRef.current = nextCode;
     setSerialCode(nextCode);
     setBusinessName("");
     setGoogleReviewUrl("");
@@ -366,44 +392,70 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
       return;
     }
 
+    if (!serialCode || !serialCode.trim()) {
+      setSaveStatus({
+        type: "error",
+        message: "Please enter a Serial / Customer Code before saving.",
+      });
+      return;
+    }
+
+    const cleanNewCode = serialCode.trim().toUpperCase();
+    const oldCode = originalSerialCodeRef.current ? originalSerialCodeRef.current.trim().toUpperCase() : cleanNewCode;
+
     setSaveStatus({ type: null, message: "" });
 
     // Instantly save to local browser store so client data is 100% persistent
     const recordToSave: Standee = {
       id: initialStandee?.id || `shop-${Date.now()}`,
-      serial_code: serialCode.trim().toUpperCase(),
+      serial_code: cleanNewCode,
       business_name: businessName.trim(),
-      google_review_url: formatDirectGoogleReviewUrl(googleReviewUrl),
+      google_review_url: googleReviewUrl ? formatDirectGoogleReviewUrl(googleReviewUrl.trim()) : null,
       whatsapp_number: whatsappNumber ? whatsappNumber.trim() : null,
       is_active: true,
       scan_count: initialStandee?.scan_count || 0,
       last_scanned_at: initialStandee?.last_scanned_at || null,
       created_at: initialStandee?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      theme: theme,
-      primary_color: primaryColor,
-      accent_color: accentColor,
-      background_color: backgroundColor,
-      headline: headline,
-      subheadline: subheadline,
-      cta_text: ctaText,
-      logo_url: logoUrl,
-      qr_target_mode: qrTargetMode,
-      custom_qr_url: customQrUrl,
+      theme: theme || "luxury-dark",
+      primary_color: primaryColor || "#F59E0B",
+      accent_color: accentColor || "#D97706",
+      background_color: backgroundColor || "#0A0E1A",
+      headline: headline || "Rate Your Experience",
+      subheadline: subheadline || "Point your camera to scan • Rate in 5 seconds",
+      cta_text: ctaText || "Review us on Google",
+      logo_url: logoUrl || null,
+      qr_target_mode: qrTargetMode || "direct_google",
+      custom_qr_url: customQrUrl ? customQrUrl.trim() : null,
       qr_style: {
         dot_color: primaryColor || "#000000",
         corner_color: primaryColor || "#000000",
         center_logo: Boolean(logoUrl),
       }
     };
-    saveLocalStandeeRecord(recordToSave);
+
+    if (typeof window !== "undefined") {
+      try {
+        const map = getLocalStandeesMap();
+        // If code was renamed, clean up old key
+        if (oldCode && oldCode !== cleanNewCode) {
+          delete map[oldCode];
+        }
+        map[cleanNewCode] = recordToSave;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(map));
+        originalSerialCodeRef.current = cleanNewCode;
+      } catch (e) {
+        console.warn("LocalStorage save notice:", e);
+      }
+    }
 
     startTransition(async () => {
       const input: SaveShopDesignInput = {
-        serial_code: serialCode,
-        business_name: businessName,
-        google_review_url: formatDirectGoogleReviewUrl(googleReviewUrl),
-        whatsapp_number: whatsappNumber,
+        serial_code: cleanNewCode,
+        original_serial_code: oldCode,
+        business_name: businessName.trim(),
+        google_review_url: googleReviewUrl ? formatDirectGoogleReviewUrl(googleReviewUrl.trim()) : "",
+        whatsapp_number: whatsappNumber ? whatsappNumber.trim() : "",
         is_active: true,
         logo_url: logoUrl,
         theme: theme,
@@ -414,7 +466,7 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
         subheadline: subheadline,
         cta_text: ctaText,
         qr_target_mode: qrTargetMode,
-        custom_qr_url: customQrUrl,
+        custom_qr_url: customQrUrl ? customQrUrl.trim() : null,
       };
 
       try {
@@ -427,7 +479,7 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
         if (res.success) {
           setSaveStatus({
             type: "success",
-            message: res.message || `Shop '${businessName}' saved successfully!`,
+            message: res.message || `Shop '${businessName}' (#${cleanNewCode}) saved successfully!`,
           });
           setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
           return;
@@ -444,7 +496,7 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
         if (res.success) {
           setSaveStatus({
             type: "success",
-            message: res.message || `Shop '${businessName}' saved successfully!`,
+            message: res.message || `Shop '${businessName}' (#${cleanNewCode}) saved successfully!`,
           });
           setTimeout(() => setSaveStatus({ type: null, message: "" }), 5000);
         } else {
@@ -461,9 +513,9 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
   const handleDownloadPdf = async () => {
     if (!qrDataUrl) return;
     await downloadStandeePdf({
-      serial_code: serialCode,
-      business_name: businessName,
-      theme: theme,
+      serial_code: serialCode || "ST-101",
+      business_name: businessName || "Shop",
+      theme: theme || "luxury-dark",
       headline: headline,
       subheadline: subheadline,
       cta_text: ctaText,
@@ -478,8 +530,8 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
   // Trigger Branded QR PNG Download
   const handleDownloadQrPng = () => {
     if (!qrDataUrl) return;
-    const cleanName = businessName.toLowerCase().replace(/[^a-z0-9]/g, "_");
-    downloadDataUrl(qrDataUrl, `qr_branded_${serialCode}_${cleanName}.png`);
+    const cleanName = (businessName || "shop").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    downloadDataUrl(qrDataUrl, `qr_branded_${serialCode || "ST-101"}_${cleanName}.png`);
   };
 
   return (

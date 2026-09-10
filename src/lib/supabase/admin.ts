@@ -166,12 +166,15 @@ function saveLocalStore(map: Record<string, Standee>) {
  * Fetch a standee by serial code
  */
 export async function getStandeeByCode(code: string): Promise<Standee | null> {
+  const cleanCode = (code || "").trim().toUpperCase();
+  if (!cleanCode) return null;
+
   if (supabaseAdmin) {
     try {
       const { data, error } = await supabaseAdmin
         .from("standees")
         .select("*")
-        .eq("serial_code", code)
+        .eq("serial_code", cleanCode)
         .maybeSingle();
 
       if (!error && data) {
@@ -184,7 +187,7 @@ export async function getStandeeByCode(code: string): Promise<Standee | null> {
 
   // Fallback to local store
   const store = getLocalStore();
-  return store[code] || null;
+  return store[cleanCode] || null;
 }
 
 /**
@@ -294,12 +297,15 @@ export async function upsertStandeeRecord(record: Partial<Standee> & { serial_co
  * Delete a standee record (Admin only)
  */
 export async function deleteStandeeRecord(code: string): Promise<boolean> {
+  const cleanCode = (code || "").trim().toUpperCase();
+  if (!cleanCode) return false;
+
   if (supabaseAdmin) {
     try {
       const { error } = await supabaseAdmin
         .from("standees")
         .delete()
-        .eq("serial_code", code);
+        .eq("serial_code", cleanCode);
       if (error) {
         console.warn("Supabase delete error:", error.message);
       }
@@ -309,8 +315,8 @@ export async function deleteStandeeRecord(code: string): Promise<boolean> {
   }
 
   const store = getLocalStore();
-  if (store[code]) {
-    delete store[code];
+  if (store[cleanCode]) {
+    delete store[cleanCode];
     saveLocalStore(store);
     return true;
   }

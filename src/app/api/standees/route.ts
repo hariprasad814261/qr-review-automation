@@ -45,8 +45,18 @@ export async function POST(request: Request) {
     }
 
     const cleanCode = body.serial_code.trim().toUpperCase();
+    const oldCode = body.original_serial_code ? body.original_serial_code.trim().toUpperCase() : cleanCode;
     const cleanWhatsApp = body.whatsapp_number ? normalizeWhatsAppNumber(body.whatsapp_number) : null;
     
+    // If customer code was renamed/edited, migrate from old code
+    if (oldCode && oldCode !== cleanCode) {
+      try {
+        await deleteStandeeRecord(oldCode);
+      } catch (e) {
+        console.warn("Notice: Old standee migration cleanup:", e);
+      }
+    }
+
     // Safely resolve review URL
     let directReviewUrl: string | null = null;
     if (body.google_review_url && body.google_review_url.trim()) {

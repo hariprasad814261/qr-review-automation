@@ -44,6 +44,16 @@ export function EditStandeeModal({
 
     setLoading(false);
     if (res.success && res.data) {
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem("qr_custom_standees_v1");
+          const map = raw ? JSON.parse(raw) : {};
+          map[res.data.serial_code] = { ...(map[res.data.serial_code] || {}), ...res.data };
+          localStorage.setItem("qr_custom_standees_v1", JSON.stringify(map));
+        } catch (e) {
+          console.warn("Local storage update notice:", e);
+        }
+      }
       setStatusMessage({ type: "success", text: "Standee updated successfully!" });
       setTimeout(() => {
         onSuccess(res.data!);
@@ -65,6 +75,18 @@ export function EditStandeeModal({
     setResetting(false);
 
     if (res.success && res.data) {
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem("qr_custom_standees_v1");
+          if (raw) {
+            const map = JSON.parse(raw);
+            delete map[standee.serial_code];
+            localStorage.setItem("qr_custom_standees_v1", JSON.stringify(map));
+          }
+        } catch (e) {
+          console.warn("Local storage reset notice:", e);
+        }
+      }
       setStatusMessage({ type: "success", text: "Standee reset to unlinked inventory." });
       setTimeout(() => {
         window.location.reload();

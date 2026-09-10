@@ -4,7 +4,8 @@ import { z } from "zod";
  * Normalizes WhatsApp numbers to a clean international format without '+', spaces, or dashes.
  * Automatically adds '91' country code prefix if a 10-digit Indian number is provided.
  */
-export function normalizeWhatsAppNumber(raw: string): string {
+export function normalizeWhatsAppNumber(raw?: string | null): string {
+  if (!raw || typeof raw !== "string") return "";
   // Remove all non-digits
   let digits = raw.replace(/\D/g, "");
 
@@ -24,8 +25,10 @@ export function normalizeWhatsAppNumber(raw: string): string {
 /**
  * Formats WhatsApp number for friendly visual display (e.g. +91 98765 43210)
  */
-export function formatDisplayWhatsApp(raw: string): string {
+export function formatDisplayWhatsApp(raw?: string | null): string {
+  if (!raw) return "";
   const digits = normalizeWhatsAppNumber(raw);
+  if (!digits) return "";
   if (digits.startsWith("91") && digits.length === 12) {
     return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
   }
@@ -35,19 +38,21 @@ export function formatDisplayWhatsApp(raw: string): string {
 /**
  * Generates the direct WhatsApp click-to-chat URL with a polite private feedback message.
  */
-export function buildWhatsAppFeedbackUrl(whatsappNumber: string, businessName: string): string {
+export function buildWhatsAppFeedbackUrl(whatsappNumber?: string | null, businessName?: string | null): string {
   const normalized = normalizeWhatsAppNumber(whatsappNumber);
-  const text = `Hi ${businessName}, I recently visited and wanted to share direct feedback regarding my experience: `;
-  return `https://wa.me/${normalized}?text=${encodeURIComponent(text)}`;
+  const cleanName = businessName ? businessName.trim() : "Valued Partner";
+  const text = `Hi ${cleanName}, I recently visited and wanted to share direct feedback regarding my experience: `;
+  return `https://wa.me/${normalized || "919710707522"}?text=${encodeURIComponent(text)}`;
 }
 
 /**
  * Synchronously normalizes and formats Google Review URLs so that mobile devices (iOS / Android)
  * and desktop browsers directly open the "Write a Review" dialog with 5-star rating & comment box.
  */
-export function formatDirectGoogleReviewUrl(rawUrl: string): string {
-  if (!rawUrl) return "";
+export function formatDirectGoogleReviewUrl(rawUrl?: string | null): string {
+  if (!rawUrl || typeof rawUrl !== "string") return "";
   let url = rawUrl.trim();
+  if (!url) return "";
 
   // 1. If it's already an official writereview link
   // e.g. https://search.google.com/local/writereview?placeid=...
@@ -104,9 +109,10 @@ export function formatDirectGoogleReviewUrl(rawUrl: string): string {
  * Asynchronously resolves any Google Maps URL, short link (maps.app.goo.gl),
  * or feature ID (0x...:0x...) into the official 1-Tap "search.google.com/local/writereview?placeid=..." format.
  */
-export async function resolveToDirectGoogleReviewUrl(rawUrl: string): Promise<string> {
-  if (!rawUrl) return "";
+export async function resolveToDirectGoogleReviewUrl(rawUrl?: string | null): Promise<string> {
+  if (!rawUrl || typeof rawUrl !== "string") return "";
   let url = rawUrl.trim();
+  if (!url) return "";
 
   // First check synchronous rules
   const syncResult = formatDirectGoogleReviewUrl(url);

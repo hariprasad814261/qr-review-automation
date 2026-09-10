@@ -220,8 +220,19 @@ export async function saveShopDesignAction(
     }
 
     const cleanCode = input.serial_code.trim().toUpperCase();
+    const oldCode = input.original_serial_code ? input.original_serial_code.trim().toUpperCase() : cleanCode;
     const cleanWhatsApp = input.whatsapp_number ? normalizeWhatsAppNumber(input.whatsapp_number) : null;
     const directReviewUrl = input.google_review_url ? await resolveToDirectGoogleReviewUrl(input.google_review_url) : null;
+
+    // If customer code was renamed/edited, migrate from old code
+    if (oldCode && oldCode !== cleanCode) {
+      try {
+        await deleteStandeeRecord(oldCode);
+        revalidatePath(`/s/${oldCode}`);
+      } catch (e) {
+        console.warn("Notice: Old standee migration cleanup:", e);
+      }
+    }
 
     const recordToSave: Partial<Standee> & { serial_code: string } = {
       serial_code: cleanCode,
@@ -248,14 +259,13 @@ export async function saveShopDesignAction(
 
     const saved = await upsertStandeeRecord(recordToSave);
 
-
     revalidatePath(`/s/${cleanCode}`);
     revalidatePath("/admin/batch");
     revalidatePath("/admin/studio");
 
     return {
       success: true,
-      message: `Shop '${input.business_name}' design saved successfully!`,
+      message: `Shop '${input.business_name}' (#${cleanCode}) design saved successfully!`,
       data: saved,
     };
   } catch (error: unknown) {

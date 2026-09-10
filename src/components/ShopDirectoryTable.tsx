@@ -75,6 +75,7 @@ export function ShopDirectoryTable({ initialStandees, appBaseUrl }: ShopDirector
   });
 
   const getShopTargetUrl = (shop: Standee) => {
+    if (!shop) return `${(appBaseUrl || "").replace(/\/$/, "")}/s/ST-101`;
     if (shop.qr_target_mode === "direct_google" && shop.google_review_url) {
       return formatDirectGoogleReviewUrl(shop.google_review_url.trim());
     }
@@ -83,9 +84,9 @@ export function ShopDirectoryTable({ initialStandees, appBaseUrl }: ShopDirector
       return clean ? `https://wa.me/${clean}` : "https://whatsapp.com";
     }
     if (shop.qr_target_mode === "custom_url" && shop.custom_qr_url) {
-      return shop.custom_qr_url.trim();
+      return (shop.custom_qr_url || "").trim();
     }
-    return `${appBaseUrl.replace(/\/$/, "")}/s/${shop.serial_code}`;
+    return `${(appBaseUrl || "").replace(/\/$/, "")}/s/${shop.serial_code || "ST-101"}`;
   };
 
   // Handle Quick PDF Download
@@ -392,7 +393,7 @@ export function ShopDirectoryTable({ initialStandees, appBaseUrl }: ShopDirector
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Edit Design in Studio */}
                           <Link
-                            href={`/admin/studio?code=${s.serial_code}`}
+                            href={`/admin/studio?code=${encodeURIComponent(s.serial_code)}`}
                             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
                             title="Open in Customizer Studio"
                           >
