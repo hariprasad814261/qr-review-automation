@@ -42,7 +42,10 @@ export function buildWhatsAppFeedbackUrl(whatsappNumber?: string | null, busines
   const normalized = normalizeWhatsAppNumber(whatsappNumber);
   const cleanName = businessName ? businessName.trim() : "Valued Partner";
   const text = `Hi ${cleanName}, I recently visited and wanted to share direct feedback regarding my experience: `;
-  return `https://wa.me/${normalized || "919710707522"}?text=${encodeURIComponent(text)}`;
+  if (!normalized) {
+    return `https://wa.me/?text=${encodeURIComponent(text)}`;
+  }
+  return `https://wa.me/${normalized}?text=${encodeURIComponent(text)}`;
 }
 
 /**
@@ -68,7 +71,7 @@ export function formatDirectGoogleReviewUrl(rawUrl?: string | null): string {
 
   // 3. Known place IDs / hex signatures
   // Burmix Porur hex pair 0x3a5261a09e4c0353:0xa1f8a14f10fadfb or decimal CID 729453487205625339
-  if (url.includes("0x3a5261a09e4c0353") || url.includes("a1f8a14f10fadfb") || url.includes("729453487205625339") || url.toLowerCase().includes("burmix")) {
+  if (url.includes("0x3a5261a09e4c0353") || url.includes("a1f8a14f10fadfb") || url.includes("729453487205625339") || (url.toLowerCase().includes("burmix") && !url.toLowerCase().includes("burger"))) {
     return "https://search.google.com/local/writereview?placeid=ChIJUwNMnqBhUjoR-60P8RSKHwo";
   }
 

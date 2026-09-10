@@ -24,6 +24,16 @@ export function StandeeResolverClient({ code, initialStandee }: StandeeResolverC
           const map = JSON.parse(raw);
           const local = map[code.toUpperCase()];
           if (local && local.is_active) {
+            // Guard against stale Burmix copy-paste data in local storage for non-Burmix shops
+            if (code.toUpperCase() !== "ST-101") {
+              const mutableLocal = local as Record<string, any>;
+              if (mutableLocal.whatsapp_number === "919710707522") {
+                delete mutableLocal.whatsapp_number;
+              }
+              if (mutableLocal.google_review_url?.includes("ChIJUwNMnqBhUjoR-60P8RSKHwo")) {
+                delete mutableLocal.google_review_url;
+              }
+            }
             setStandee((prev) => ({ ...(prev || {}), ...local }));
           }
         }

@@ -35,6 +35,12 @@ export function AdminActivationForm({ code, initialData, onActivated }: AdminAct
           const map = JSON.parse(raw);
           const local = map[code.toUpperCase()];
           if (local) {
+            // Guard against stale Burmix data for non-ST-101
+            if (code.toUpperCase() !== "ST-101") {
+              const mutableLocal = local as Record<string, any>;
+              if (mutableLocal.whatsapp_number === "919710707522") delete mutableLocal.whatsapp_number;
+              if (mutableLocal.google_review_url?.includes("ChIJUwNMnqBhUjoR-60P8RSKHwo")) delete mutableLocal.google_review_url;
+            }
             if (local.business_name && !businessName) setBusinessName(local.business_name);
             if (local.google_review_url && !googleReviewUrl) setGoogleReviewUrl(local.google_review_url);
             if (local.whatsapp_number && !whatsappNumber) setWhatsappNumber(local.whatsapp_number);

@@ -157,6 +157,12 @@ export function StandeeStudio({ initialStandee, appBaseUrl = "http://localhost:3
       const local = localMap[targetCode];
 
       if (local) {
+        // Guard against stale Burmix data for non-ST-101
+        if (targetCode !== "ST-101") {
+          const mutableLocal = local as Record<string, any>;
+          if (mutableLocal.whatsapp_number === "919710707522") delete mutableLocal.whatsapp_number;
+          if (mutableLocal.google_review_url?.includes("ChIJUwNMnqBhUjoR-60P8RSKHwo")) delete mutableLocal.google_review_url;
+        }
         if (local.serial_code) setSerialCode(local.serial_code);
         if (local.business_name !== undefined && local.business_name !== null) setBusinessName(local.business_name);
         if (local.google_review_url !== undefined && local.google_review_url !== null) setGoogleReviewUrl(local.google_review_url);
