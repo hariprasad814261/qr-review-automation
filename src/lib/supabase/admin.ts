@@ -44,6 +44,8 @@ const DENTAL_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/
 
 const SALON_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="%231E1B4B" stroke="%23FB7185" stroke-width="4"/><path d="M34 26a10 10 0 0 0-10 10c0 5 3 9 7 10l12 28 8-4-11-26a10 10 0 0 0 4-8 10 10 0 0 0-10-10zm32 0a10 10 0 0 1 10 10c0 3-1 6-3 8l-11 26 8 4 12-28c4-1 7-5 7-10a10 10 0 0 0-10-10 10 10 0 0 0-8 4l-5 8-5-8a10 10 0 0 0-8-4z" fill="%23FB7185"/></svg>`;
 
+const BURGERMAN_LOGO = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="%231E1B18" stroke="%23F59E0B" stroke-width="4"/><path d="M28 42c0-8 10-14 22-14s22 6 22 14H28zm-2 8h48v6H26v-6zm4 12h40c0 6-8 12-20 12s-20-6-20-12z" fill="%23F59E0B"/><text x="50" y="54" fill="%231E1B18" font-size="7" font-weight="900" text-anchor="middle" font-family="sans-serif">BURGER</text></svg>`;
+
 // Local JSON file persistence for local dev / offline testing
 const TMP_DB_PATH = path.join(os.tmpdir(), "qr_inventory_db.json");
 let memoryStore: Record<string, Standee> | null = null;
@@ -70,7 +72,7 @@ function getInitialDemoStore(): Record<string, Standee> {
       subheadline: "Point your camera to scan • Rate in 5 seconds",
       cta_text: "Review us on Google",
       logo_url: BURMIX_LOGO,
-      qr_target_mode: "direct_google",
+      qr_target_mode: "smart_filter",
       qr_style: {
         dot_color: "#D97706",
         corner_color: "#F59E0B",
@@ -96,6 +98,7 @@ function getInitialDemoStore(): Record<string, Standee> {
       subheadline: "Quick feedback helps our clinic care for you even better",
       cta_text: "Leave a 5-Star Review",
       logo_url: DENTAL_LOGO,
+      qr_target_mode: "smart_filter",
       qr_style: {
         dot_color: "#0F766E",
         corner_color: "#0D9488",
@@ -121,9 +124,36 @@ function getInitialDemoStore(): Record<string, Standee> {
       subheadline: "Scan to rate your styling session in 5 seconds",
       cta_text: "Rate Your Stylist",
       logo_url: SALON_LOGO,
+      qr_target_mode: "smart_filter",
       qr_style: {
         dot_color: "#BE123C",
         corner_color: "#E11D48",
+        center_logo: true,
+      },
+    },
+    "ST-104": {
+      id: "10400000-0000-0000-0000-000000000104",
+      serial_code: "ST-104",
+      business_name: "Burger Man",
+      google_review_url: "https://search.google.com/local/writereview?placeid=ChIJUwNMnqBhUjoR-60P8RSKHwo",
+      whatsapp_number: "919710707522",
+      is_active: true,
+      scan_count: 34,
+      last_scanned_at: now,
+      created_at: now,
+      updated_at: now,
+      theme: "luxury-dark",
+      primary_color: "#F59E0B",
+      accent_color: "#D97706",
+      background_color: "#0A0E1A",
+      headline: "Rate Your Experience",
+      subheadline: "Point your camera to scan • Rate in 5 seconds",
+      cta_text: "Review us on Google",
+      logo_url: BURGERMAN_LOGO,
+      qr_target_mode: "smart_filter",
+      qr_style: {
+        dot_color: "#D97706",
+        corner_color: "#F59E0B",
         center_logo: true,
       },
     },
