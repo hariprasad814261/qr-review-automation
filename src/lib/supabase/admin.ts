@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { Standee } from "@/types/database";
+import { cache } from "react";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -193,32 +194,37 @@ function saveLocalStore(map: Record<string, Standee>) {
 }
 
 /**
- * Fetch a standee by serial code
+ * Fetch a standee by serial code (cached per-request with 1.5s fast timeout fallback)
  */
-export async function getStandeeByCode(code: string): Promise<Standee | null> {
+export const getStandeeByCode = cache(async (code: string): Promise<Standee | null> => {
   const cleanCode = (code || "").trim().toUpperCase();
   if (!cleanCode) return null;
 
   if (supabaseAdmin) {
     try {
-      const { data, error } = await supabaseAdmin
+      const queryPromise = supabaseAdmin
         .from("standees")
         .select("*")
         .eq("serial_code", cleanCode)
         .maybeSingle();
 
-      if (!error && data) {
-        return data as Standee;
+      const timeoutPromise = new Promise<{ data: null; error: Error }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: new Error("Supabase query timeout fallback") }), 1500)
+      );
+
+      const res = await Promise.race([queryPromise, timeoutPromise]);
+      if (!res.error && res.data) {
+        return res.data as Standee;
       }
     } catch (e) {
       console.warn("Supabase query fallback:", e);
     }
   }
 
-  // Fallback to local store
+  // Fallback to in-memory/local store
   const store = getLocalStore();
   return store[cleanCode] || null;
-}
+});
 
 /**
  * Atomically increment standee scan counter

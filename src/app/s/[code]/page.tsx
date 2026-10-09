@@ -2,12 +2,24 @@ import { getStandeeByCode, incrementScanCount } from "@/lib/supabase/admin";
 import { StandeeResolverClient } from "@/components/StandeeResolverClient";
 import { Metadata } from "next";
 
-export const revalidate = 0;
+// ISR: Cache statically at the edge, background revalidate at most once every 60s
+export const revalidate = 60;
+export const dynamicParams = true;
 
 interface PageProps {
   params: {
     code: string;
   };
+}
+
+// Pre-render core standees (including Bomix ST-101) at build time for millisecond mobile loads
+export async function generateStaticParams() {
+  return [
+    { code: "ST-101" },
+    { code: "ST-102" },
+    { code: "ST-103" },
+    { code: "ST-104" },
+  ];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -30,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function StandeeResolverPage({ params }: PageProps) {
   const serialCode = (params.code || "").toUpperCase();
 
-  // Fetch standee from Supabase / Database
+  // Fetch standee from Supabase / in-memory cache
   const standee = await getStandeeByCode(serialCode);
 
   // Asynchronously increment scan counter for analytics (fire and forget)
@@ -40,3 +52,4 @@ export default async function StandeeResolverPage({ params }: PageProps) {
 
   return <StandeeResolverClient code={serialCode} initialStandee={standee} />;
 }
+

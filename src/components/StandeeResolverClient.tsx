@@ -17,6 +17,14 @@ export function StandeeResolverClient({ code, initialStandee }: StandeeResolverC
 
   useEffect(() => {
     setMounted(true);
+
+    // Non-blocking background analytics beacon
+    if (typeof window !== "undefined" && code) {
+      try {
+        fetch(`/api/scan?code=${encodeURIComponent(code)}`, { method: "POST" }).catch(() => {});
+      } catch {}
+    }
+
     if (typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem("qr_custom_standees_v1");
